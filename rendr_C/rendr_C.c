@@ -1,9 +1,7 @@
 #include <stdio.h>
 
+#define EXPORT __declspec(dllexport)
 
-
-int main(int argc, const char** argv) {
-    printf("Starting rendr ...\n");
-
-    return 0;
+EXPORT void Init() {
+    printf("rendr from C\n");
 }
