@@ -25,6 +25,9 @@ namespace Launcher {
 
 
 		[DllImport(Lib, CallingConvention = CConv)]
-		public static extern void Line(int X0, int Y0, int X1, int Y1);
+		public static extern void DrawLine(int X0, int Y0, int X1, int Y1);
+
+		[DllImport(Lib, CallingConvention = CConv)]
+		public static extern void DrawTriangle(void* Vertices, void* UVs, int Index);
 	}
 }

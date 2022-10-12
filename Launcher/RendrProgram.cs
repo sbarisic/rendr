@@ -21,7 +21,6 @@ namespace Launcher {
 		const int W = 800;
 		const int H = 600;
 
-		static DrawBitmap Framebuffer;
 
 		public static void Run() {
 			Console.WriteLine("Opening render window");
@@ -66,11 +65,14 @@ namespace Launcher {
 			Glfw.Terminate();
 		}
 
+		static DrawBitmap Framebuffer;
+		static Vector3[] Verts;
+		static Vector2[] UVs;
+
 		static void CreateObjects() {
 			Framebuffer = new DrawBitmap(W, H);
 
-
-			Triangles = ObjLoader.Load("models\\diablo3_pose\\diablo3_pose.obj");
+			ObjLoader.Load("models\\cup_green\\cup_green_obj.obj", out Verts, out UVs);
 		}
 
 		static void RenderLoop(float Dt) {
@@ -78,9 +80,17 @@ namespace Launcher {
 
 			rendr.SetColorBuffer(Framebuffer.Data, Framebuffer.Width, Framebuffer.Height);
 			rendr.Fill(0, 0, 0, 255);
-
 			rendr.SetDrawColor(255, 255, 255, 255);
-			rendr.Line(10, 20, 300, 200);
+
+			fixed (Vector3* VertsPtr = Verts)
+			fixed (Vector2* UVsPtr = UVs) {
+
+				for (int i = 0; i < Verts.Length; i += 3) {
+					rendr.DrawTriangle((void*)VertsPtr, (void*)UVsPtr, i);
+				}
+
+			}
+
 
 			Framebuffer.Unlock();
 			Gfx.DrawImageUnscaled(Framebuffer.Bmp, 0, 0, W, H);

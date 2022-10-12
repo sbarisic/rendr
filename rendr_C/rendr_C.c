@@ -94,7 +94,7 @@ EXPORT void Fill(byte R, byte G, byte B, byte A) {
 	}
 }
 
-EXPORT void Line(int X0, int Y0, int X1, int Y1) {
+EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 	bool Steep = false;
 
 	if (abs(X0 - X1) < abs(Y0 - Y1)) {
@@ -141,8 +141,16 @@ EXPORT void Line(int X0, int Y0, int X1, int Y1) {
 	}
 }
 
-EXPORT void Triangle(Vector3 A, Vector3 B, Vector3 C) {
-	Line((int)A.X, (int)A.Y, (int)B.X, (int)B.Y);
-	Line((int)B.X, (int)B.Y, (int)C.X, (int)C.Y);
-	Line((int)C.X, (int)C.Y, (int)A.X, (int)A.Y);
+EXPORT void DrawTriangle(Vector3* Vertices, Vector2* UVs, int Index) {
+	Vector3 A = Vertices[Index];
+	Vector3 B = Vertices[Index + 1];
+	Vector3 C = Vertices[Index + 2];
+
+	const float Mul = 40;
+
+	DrawLine((int)A.X * Mul, (int)A.Y * Mul, (int)B.X * Mul, (int)B.Y * Mul);
+
+	DrawLine((int)B.X * Mul, (int)B.Y * Mul, (int)C.X * Mul, (int)C.Y * Mul);
+
+	DrawLine((int)C.X * Mul, (int)C.Y * Mul, (int)A.X * Mul, (int)A.Y * Mul);
 }
