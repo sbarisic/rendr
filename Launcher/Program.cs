@@ -25,9 +25,6 @@ namespace Launcher {
 			Kernel32.SetDllDirectory(DllPath);
 
 			RendrProgram.Run();
-
-			Console.WriteLine("Done!");
-			Console.ReadLine();
 		}
 	}
 }

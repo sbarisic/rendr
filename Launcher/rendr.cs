@@ -6,12 +6,25 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
 namespace Launcher {
-	public class rendr {
+	public unsafe class rendr {
 		const string Lib = "rendr_C.dll";
 		const CallingConvention CConv = CallingConvention.Cdecl;
 
 
 		[DllImport(Lib, CallingConvention = CConv)]
 		public static extern void Init();
+
+		[DllImport(Lib, CallingConvention = CConv)]
+		public static extern void SetColorBuffer(void* Buffer, int Width, int Height);
+
+		[DllImport(Lib, CallingConvention = CConv)]
+		public static extern void SetDrawColor(byte R, byte G, byte B, byte A);
+
+		[DllImport(Lib, CallingConvention = CConv)]
+		public static extern void Fill(byte R, byte G, byte B, byte A);
+
+
+		[DllImport(Lib, CallingConvention = CConv)]
+		public static extern void Line(int X0, int Y0, int X1, int Y1);
 	}
 }
