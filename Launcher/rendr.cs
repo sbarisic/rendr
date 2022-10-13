@@ -13,9 +13,6 @@ namespace Launcher {
 
 
         [DllImport(Lib, CallingConvention = CConv)]
-        public static extern void Init();
-
-        [DllImport(Lib, CallingConvention = CConv)]
         public static extern void SetColorBuffer(void* Buffer, int Width, int Height);
 
         [DllImport(Lib, CallingConvention = CConv)]
@@ -36,9 +33,6 @@ namespace Launcher {
 
         [DllImport(Lib, CallingConvention = CConv)]
         public static extern void DrawLine(int X0, int Y0, int X1, int Y1);
-
-        [DllImport(Lib, CallingConvention = CConv)]
-        public static extern void DrawTriangle(void* Vertices, void* UVs, int Index);
 
         [DllImport(Lib, CallingConvention = CConv)]
         public static extern void DrawTriangles(void* Vertices, void* UVs, int Count);

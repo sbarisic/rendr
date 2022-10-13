@@ -123,7 +123,7 @@ namespace Launcher {
             Tex0.Lock();
 
             ObjLoader.Load("models/cup_green/cup_green_obj.obj", out Verts, out UVs);
-
+            Console.WriteLine("Vertices: {0}", Verts.Length);
 
             Vector3 Center = Vector3.Zero;
 

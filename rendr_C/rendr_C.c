@@ -105,11 +105,6 @@ Vector2 Vec2(float X, float Y) {
 	};
 }
 
-/*
-Vector3 Vector3_Add(Vector3 A, Vector3 B) {
-	return Vec3(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
-}*/
-
 float Float_Vary(float A, float B, float C, Vector3 Bary) {
 	return (A * Bary.X) + (B * Bary.Y) + (C * Bary.Z);
 }
@@ -146,16 +141,13 @@ float Clamp(float V, float Min, float Max) {
 	return V;
 }
 
-void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum,
-	Vector3* Maximum) {
+void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum, Vector3* Maximum) {
 	*Minimum = Vec3(Min(A.X, B.X, C.X), Min(A.Y, B.Y, C.Y), Min(A.Z, B.Z, C.Z));
 	*Maximum = Vec3(Max(A.X, B.X, C.X), Max(A.Y, B.Y, C.Y), Max(A.Z, B.Z, C.Z));
 }
 
-void Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY,
-	Vector3* Val) {
-	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX),
-		Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
+void Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY,	Vector3* Val) {
+	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX), Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
 
 	if (abs(U.Z) < 1) {
 		Val->X = -1;
@@ -184,9 +176,6 @@ const bool EnableDepthTesting = true;
 const bool EnableTexturing = true;
 const bool EnableBackfaceCulling = true;
 
-EXPORT void Init() {
-	printf("rendr from C\n");
-}
 
 EXPORT void SetColorBuffer(RendrColor* Buffer, int Width, int Height) {
 	ColorBuffer.Buffer = Buffer;
@@ -315,7 +304,7 @@ RendrColor Shader_Fragment(Vector3 Pos, Vector2 UV) {
 	return DrawColor;
 }
 
-EXPORT void DrawTriangle(Vector3* Vertices, Vector2* UVs, int Index) {
+void DrawTriangle(Vector3* Vertices, Vector2* UVs, int Index) {
 	Vector3 A = Vertices[Index];
 	Vector3 B = Vertices[Index + 1];
 	Vector3 C = Vertices[Index + 2];
@@ -350,7 +339,7 @@ EXPORT void DrawTriangle(Vector3* Vertices, Vector2* UVs, int Index) {
 				continue;
 
 			int Idx = Y * ColorBuffer.Width + X;
-			float D = (A.Z * BCnt.X) + (B.Z * BCnt.Y) + (C.Z * BCnt.Z);
+			float D = Float_Vary(A.Z, B.Z, C.Z, BCnt);
 
 			if (!EnableDepthTesting || (DepthBuffer.Buffer[Idx].Float > D)) {
 				float TexU = Float_Vary(A_UV.X, B_UV.X, C_UV.X, BCnt);
