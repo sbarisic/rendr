@@ -1,16 +1,24 @@
+#include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 #define EXPORT __declspec(dllexport)
 
 typedef unsigned char byte;
 
 typedef struct {
-	byte B;
-	byte G;
-	byte R;
-	byte A;
+	union {
+		struct {
+			byte B;
+			byte G;
+			byte R;
+			byte A;
+		};
+
+		float Float;
+	};
+
 } RendrColor;
 
 typedef struct {
@@ -40,39 +48,169 @@ typedef struct {
 	Vector2 C_UV;
 } Triangle;
 
+typedef struct {
+	float M11;
+	float M12;
+	float M13;
+	float M14;
+	float M21;
+	float M22;
+	float M23;
+	float M24;
+	float M31;
+	float M32;
+	float M33;
+	float M34;
+	float M41;
+	float M42;
+	float M43;
+	float M44;
+} Matrix4x4;
+
 //------------ Generic Utility Functions --------------------------------------------------
 
+
+Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
+	Matrix4x4 Res;
+	Res.M11 = A.M11 * B.M11 + A.M12 * B.M21 + A.M13 * B.M31 + A.M14 * B.M41;
+	Res.M12 = A.M11 * B.M12 + A.M12 * B.M22 + A.M13 * B.M32 + A.M14 * B.M42;
+	Res.M13 = A.M11 * B.M13 + A.M12 * B.M23 + A.M13 * B.M33 + A.M14 * B.M43;
+	Res.M14 = A.M11 * B.M14 + A.M12 * B.M24 + A.M13 * B.M34 + A.M14 * B.M44;
+	Res.M21 = A.M21 * B.M11 + A.M22 * B.M21 + A.M23 * B.M31 + A.M24 * B.M41;
+	Res.M22 = A.M21 * B.M12 + A.M22 * B.M22 + A.M23 * B.M32 + A.M24 * B.M42;
+	Res.M23 = A.M21 * B.M13 + A.M22 * B.M23 + A.M23 * B.M33 + A.M24 * B.M43;
+	Res.M24 = A.M21 * B.M14 + A.M22 * B.M24 + A.M23 * B.M34 + A.M24 * B.M44;
+	Res.M31 = A.M31 * B.M11 + A.M32 * B.M21 + A.M33 * B.M31 + A.M34 * B.M41;
+	Res.M32 = A.M31 * B.M12 + A.M32 * B.M22 + A.M33 * B.M32 + A.M34 * B.M42;
+	Res.M33 = A.M31 * B.M13 + A.M32 * B.M23 + A.M33 * B.M33 + A.M34 * B.M43;
+	Res.M34 = A.M31 * B.M14 + A.M32 * B.M24 + A.M33 * B.M34 + A.M34 * B.M44;
+	Res.M41 = A.M41 * B.M11 + A.M42 * B.M21 + A.M43 * B.M31 + A.M44 * B.M41;
+	Res.M42 = A.M41 * B.M12 + A.M42 * B.M22 + A.M43 * B.M32 + A.M44 * B.M42;
+	Res.M43 = A.M41 * B.M13 + A.M42 * B.M23 + A.M43 * B.M33 + A.M44 * B.M43;
+	Res.M44 = A.M41 * B.M14 + A.M42 * B.M24 + A.M43 * B.M34 + A.M44 * B.M44;
+	return Res;
+}
+
+
+
+Vector3 Vec3(float X, float Y, float Z) {
+	return (Vector3) {
+		X, Y, Z
+	};
+}
+
+Vector2 Vec2(float X, float Y) {
+	return (Vector2) {
+		X, Y
+	};
+}
+
+/*
 Vector3 Vector3_Add(Vector3 A, Vector3 B) {
-	return (Vector3) { A.X + B.X, A.Y + B.Y, A.Z + B.Z };
+	return Vec3(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
+}*/
+
+float Float_Vary(float A, float B, float C, Vector3 Bary) {
+	return (A * Bary.X) + (B * Bary.Y) + (C * Bary.Z);
+}
+
+Vector3 Vector3_Sub(Vector3 A, Vector3 B) {
+	return Vec3(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
 }
 
 Vector3 Vector3_Normalize(Vector3 V) {
-	return (Vector3) {0, 0, 0};
+	float LenSq = V.X * V.X + V.Y * V.Y + V.Z * V.Z;
+	float Len = (float)sqrt(LenSq);
+	return Vec3(V.X / Len, V.Y / Len, V.Z / Len);
 }
 
-Vector3 Vector3_Cross() {
+Vector3 Vector3_Cross(Vector3 A, Vector3 B) {
+	return Vec3(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
+}
 
+Vector3 Vector3_Transform(Vector3 V, Matrix4x4 Mat) {
+	return Vec3(V.X * Mat.M11 + V.Y * Mat.M21 + V.Z * Mat.M31 + Mat.M41, V.X * Mat.M12 + V.Y * Mat.M22 + V.Z * Mat.M32 + Mat.M42, V.X * Mat.M13 + V.Y * Mat.M23 + V.Z * Mat.M33 + Mat.M43);
+}
+
+float Min(float A, float B, float C) {
+	return min(A, min(B, C));
+}
+
+float Max(float A, float B, float C) {
+	return max(A, max(B, C));
+}
+
+float Clamp(float V, float Min, float Max) {
+	if (V < Min) return Min;
+	if (V > Max) return Max;
+	return V;
+}
+
+void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum,
+	Vector3* Maximum) {
+	*Minimum = Vec3(Min(A.X, B.X, C.X), Min(A.Y, B.Y, C.Y), Min(A.Z, B.Z, C.Z));
+	*Maximum = Vec3(Max(A.X, B.X, C.X), Max(A.Y, B.Y, C.Y), Max(A.Z, B.Z, C.Z));
+}
+
+void Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY,
+	Vector3* Val) {
+	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX),
+		Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
+
+	if (abs(U.Z) < 1) {
+		Val->X = -1;
+		return;
+	}
+
+	Val->X = 1.0f - (U.X + U.Y) / U.Z;
+	Val->Y = U.Y / U.Z;
+	Val->Z = U.X / U.Z;
 }
 
 //-----------------------------------------------------------------------------------------
 
 RendrBuffer ColorBuffer;
+RendrBuffer DepthBuffer;
+RendrBuffer Tex0;
+
 RendrColor DrawColor;
 
-bool EnableWireframe = false;
-bool EnableDepthTesting = false;
-bool EnableTexturing = false;
-bool EnableBackfaceCulling = false;
+Matrix4x4 ViewMatrix;
+Matrix4x4 ProjectionMatrix;
+Matrix4x4 ModelMatrix;
+
+const bool EnableWireframe = false;
+const bool EnableDepthTesting = true;
+const bool EnableTexturing = true;
+const bool EnableBackfaceCulling = true;
 
 EXPORT void Init() {
 	printf("rendr from C\n");
-
 }
 
 EXPORT void SetColorBuffer(RendrColor* Buffer, int Width, int Height) {
 	ColorBuffer.Buffer = Buffer;
 	ColorBuffer.Width = Width;
 	ColorBuffer.Height = Height;
+}
+
+EXPORT void SetDepthBuffer(RendrColor* Buffer, int Width, int Height) {
+	DepthBuffer.Buffer = Buffer;
+	DepthBuffer.Width = Width;
+	DepthBuffer.Height = Height;
+}
+
+RendrColor IndexBuffer(RendrBuffer* Buffer, float U, float V) {
+	int Height = Buffer->Height;
+	int Width = Buffer->Width;
+
+	return Buffer->Buffer[(int)(V * Height) * Width + (int)(U * Width)];
+}
+
+EXPORT void SetTexBuffer(RendrColor* Buffer, int Width, int Height) {
+	Tex0.Buffer = Buffer;
+	Tex0.Width = Width;
+	Tex0.Height = Height;
 }
 
 EXPORT void SetDrawColor(byte R, byte G, byte B, byte A) {
@@ -82,15 +220,33 @@ EXPORT void SetDrawColor(byte R, byte G, byte B, byte A) {
 	DrawColor.A = A;
 }
 
-EXPORT void Fill(byte R, byte G, byte B, byte A) {
+EXPORT void SetMatrix(Matrix4x4 Mat, int MatType) {
+	switch (MatType) {
+		case 0:
+			ViewMatrix = Mat;
+			break;
+
+		case 1:
+			ProjectionMatrix = Mat;
+			break;
+
+		case 2:
+			ModelMatrix = Mat;
+			break;
+	}
+}
+
+EXPORT void Clear(byte R, byte G, byte B, byte A, float Depth) {
 	int Len = ColorBuffer.Width * ColorBuffer.Height;
 
-	for (int i = 0; i < Len; i++)
-	{
+	for (int i = 0; i < Len; i++) {
 		ColorBuffer.Buffer[i].R = R;
 		ColorBuffer.Buffer[i].G = G;
 		ColorBuffer.Buffer[i].B = B;
 		ColorBuffer.Buffer[i].A = A;
+
+		if (EnableDepthTesting)
+			DepthBuffer.Buffer[i].Float = Depth;
 	}
 }
 
@@ -126,11 +282,17 @@ EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 	int Y = Y0;
 
 	for (int X = X0; X <= X1; X++) {
-		if (Steep)
-			ColorBuffer.Buffer[X * ColorBuffer.Width + Y] = DrawColor;
-		else
-			ColorBuffer.Buffer[Y * ColorBuffer.Width + X] = DrawColor;
+		if (Steep) {
+			if (X < 0 || Y < 0 || Y >= ColorBuffer.Width || X >= ColorBuffer.Height)
+				continue;
 
+			ColorBuffer.Buffer[X * ColorBuffer.Width + Y] = DrawColor;
+		} else {
+			if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
+				continue;
+
+			ColorBuffer.Buffer[Y * ColorBuffer.Width + X] = DrawColor;
+		}
 
 		Error2 += DeltaError2;
 
@@ -141,16 +303,79 @@ EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 	}
 }
 
+Vector3 Shader_Vertex(Vector3 V) {
+	Matrix4x4 FinalMatrix = Matrix4x4_Multiply(Matrix4x4_Multiply(ModelMatrix, ViewMatrix), ProjectionMatrix);
+	return Vector3_Transform(V, FinalMatrix);
+}
+
+RendrColor Shader_Fragment(Vector3 Pos, Vector2 UV) {
+	if (EnableTexturing)
+		return IndexBuffer(&Tex0, UV.X, UV.Y);
+
+	return DrawColor;
+}
+
 EXPORT void DrawTriangle(Vector3* Vertices, Vector2* UVs, int Index) {
 	Vector3 A = Vertices[Index];
 	Vector3 B = Vertices[Index + 1];
 	Vector3 C = Vertices[Index + 2];
 
-	const float Mul = 40;
+	A = Shader_Vertex(A);
+	B = Shader_Vertex(B);
+	C = Shader_Vertex(C);
 
-	DrawLine((int)A.X * Mul, (int)A.Y * Mul, (int)B.X * Mul, (int)B.Y * Mul);
+	Vector2 A_UV = UVs[Index];
+	Vector2 B_UV = UVs[Index + 1];
+	Vector2 C_UV = UVs[Index + 2];
 
-	DrawLine((int)B.X * Mul, (int)B.Y * Mul, (int)C.X * Mul, (int)C.Y * Mul);
+	if (EnableBackfaceCulling) {
+		Vector3 Cross = Vector3_Normalize(Vector3_Cross(Vector3_Sub(C, A), Vector3_Sub(B, A)));
+		if (Cross.Z < 0)
+			return;
+	}
 
-	DrawLine((int)C.X * Mul, (int)C.Y * Mul, (int)A.X * Mul, (int)A.Y * Mul);
+	Vector3 Min = Vec3(0, 0, 0);
+	Vector3 Max = Vec3(0, 0, 0);
+	BoundingBox(A, B, C, &Min, &Max);
+
+	for (int Y = (int)Min.Y; Y < Max.Y; Y++) {
+		for (int X = (int)Min.X; X < Max.X; X++) {
+			if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
+				continue;
+
+			Vector3 BCnt = Vec3(0, 0, 0);
+			Barycentric(A, B, C, X, Y, &BCnt);
+
+			if (BCnt.X < 0 || BCnt.Y < 0 || BCnt.Z < 0)
+				continue;
+
+			int Idx = Y * ColorBuffer.Width + X;
+			float D = (A.Z * BCnt.X) + (B.Z * BCnt.Y) + (C.Z * BCnt.Z);
+
+			if (!EnableDepthTesting || (DepthBuffer.Buffer[Idx].Float > D)) {
+				float TexU = Float_Vary(A_UV.X, B_UV.X, C_UV.X, BCnt);
+				float TexV = Float_Vary(A_UV.Y, B_UV.Y, C_UV.Y, BCnt);
+				RendrColor PixColor = Shader_Fragment(BCnt, Vec2(TexU, TexV));
+
+
+				ColorBuffer.Buffer[Y * ColorBuffer.Width + X] = PixColor;
+
+				if (EnableDepthTesting) {
+					DepthBuffer.Buffer[Idx].Float = D;
+				}
+			}
+		}
+	}
+
+	if (EnableWireframe) {
+		DrawLine((int)A.X, (int)A.Y, (int)B.X, (int)B.Y);
+		DrawLine((int)B.X, (int)B.Y, (int)C.X, (int)C.Y);
+		DrawLine((int)C.X, (int)C.Y, (int)A.X, (int)A.Y);
+	}
+}
+
+EXPORT void DrawTriangles(Vector3* Vertices, Vector2* UVs, int Count) {
+	for (int i = 0; i < Count; i++) {
+		DrawTriangle(Vertices, UVs, i * 3);
+	}
 }
