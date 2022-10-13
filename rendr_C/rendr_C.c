@@ -67,8 +67,19 @@ typedef struct {
 	float M44;
 } Matrix4x4;
 
-//------------ Generic Utility Functions --------------------------------------------------
+typedef struct {
+	Vector3 Pos;
+	Vector2 UV;
+} RndrVertex;
 
+typedef struct {
+	RndrVertex* Verts;
+	int Length;
+} RndrVertexBuffer;
+
+//-----------------------------------------------------------------------------------------
+//------------ Generic Utility Functions --------------------------------------------------
+//-----------------------------------------------------------------------------------------
 
 Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
 	Matrix4x4 Res;
@@ -146,19 +157,23 @@ void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum, Vector3* Max
 	*Maximum = Vec3(Max(A.X, B.X, C.X), Max(A.Y, B.Y, C.Y), Max(A.Z, B.Z, C.Z));
 }
 
-void Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY,	Vector3* Val) {
+Vector3 Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY) {
 	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX), Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
+	Vector3 Val;
 
-	if (abs(U.Z) < 1) {
-		Val->X = -1;
-		return;
+	if (fabs(U.Z) < 1) {
+		Val.X = -1;
+		return Val;
 	}
 
-	Val->X = 1.0f - (U.X + U.Y) / U.Z;
-	Val->Y = U.Y / U.Z;
-	Val->Z = U.X / U.Z;
+	Val.X = 1.0f - (U.X + U.Y) / U.Z;
+	Val.Y = U.Y / U.Z;
+	Val.Z = U.X / U.Z;
+	return Val;
 }
 
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------
 
 RendrBuffer ColorBuffer;
@@ -176,6 +191,34 @@ const bool EnableDepthTesting = true;
 const bool EnableTexturing = true;
 const bool EnableBackfaceCulling = true;
 
+EXPORT RndrVertexBuffer* CreateVertexBuffer(Vector3* Points, Vector2* UVs, int Len) {
+	RndrVertexBuffer* Ret = malloc(sizeof(RndrVertexBuffer));
+
+	if (Ret == NULL)
+		return NULL;
+
+	Ret->Verts = malloc(sizeof(RndrVertex) * Len);
+
+	if (Ret->Verts == NULL) {
+		free(Ret);
+		return NULL;
+	}
+
+	Ret->Length = Len;
+
+	for (int i = 0; i < Len; i++)
+		Ret->Verts[i] = (RndrVertex){ Points[i], UVs[i] };
+
+	return Ret;
+}
+
+EXPORT DeleteVertexBuffer(RndrVertexBuffer* Buffer) {
+	free(Buffer->Verts);
+	Buffer->Verts = NULL;
+	Buffer->Length = 0;
+
+	free(Buffer);
+}
 
 EXPORT void SetColorBuffer(RendrColor* Buffer, int Width, int Height) {
 	ColorBuffer.Buffer = Buffer;
@@ -211,17 +254,17 @@ EXPORT void SetDrawColor(byte R, byte G, byte B, byte A) {
 
 EXPORT void SetMatrix(Matrix4x4 Mat, int MatType) {
 	switch (MatType) {
-		case 0:
-			ViewMatrix = Mat;
-			break;
+	case 0:
+		ViewMatrix = Mat;
+		break;
 
-		case 1:
-			ProjectionMatrix = Mat;
-			break;
+	case 1:
+		ProjectionMatrix = Mat;
+		break;
 
-		case 2:
-			ModelMatrix = Mat;
-			break;
+	case 2:
+		ModelMatrix = Mat;
+		break;
 	}
 }
 
@@ -276,7 +319,8 @@ EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 				continue;
 
 			ColorBuffer.Buffer[X * ColorBuffer.Width + Y] = DrawColor;
-		} else {
+		}
+		else {
 			if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
 				continue;
 
@@ -292,9 +336,9 @@ EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 	}
 }
 
-Vector3 Shader_Vertex(Vector3 V) {
+Vector3 Shader_Vertex(Vector3* V) {
 	Matrix4x4 FinalMatrix = Matrix4x4_Multiply(Matrix4x4_Multiply(ModelMatrix, ViewMatrix), ProjectionMatrix);
-	return Vector3_Transform(V, FinalMatrix);
+	*V = Vector3_Transform(*V, FinalMatrix);
 }
 
 RendrColor Shader_Fragment(Vector3 Pos, Vector2 UV) {
@@ -304,46 +348,48 @@ RendrColor Shader_Fragment(Vector3 Pos, Vector2 UV) {
 	return DrawColor;
 }
 
-void DrawTriangle(Vector3* Vertices, Vector2* UVs, int Index) {
-	Vector3 A = Vertices[Index];
-	Vector3 B = Vertices[Index + 1];
-	Vector3 C = Vertices[Index + 2];
+void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
+	RndrVertex A = TriangleVerts[Index];
+	RndrVertex B = TriangleVerts[Index + 1];
+	RndrVertex C = TriangleVerts[Index + 2];
 
-	A = Shader_Vertex(A);
-	B = Shader_Vertex(B);
-	C = Shader_Vertex(C);
+	Shader_Vertex(&A.Pos);
+	Shader_Vertex(&B.Pos);
+	Shader_Vertex(&C.Pos);
 
-	Vector2 A_UV = UVs[Index];
-	Vector2 B_UV = UVs[Index + 1];
-	Vector2 C_UV = UVs[Index + 2];
+	//Vector2 A_UV = UVs[Index];
+	//Vector2 B_UV = UVs[Index + 1];
+	//Vector2 C_UV = UVs[Index + 2];
 
 	if (EnableBackfaceCulling) {
-		Vector3 Cross = Vector3_Normalize(Vector3_Cross(Vector3_Sub(C, A), Vector3_Sub(B, A)));
+		Vector3 Cross = Vector3_Normalize(Vector3_Cross(Vector3_Sub(C.Pos, A.Pos), Vector3_Sub(B.Pos, A.Pos)));
 		if (Cross.Z < 0)
 			return;
 	}
 
-	Vector3 Min = Vec3(0, 0, 0);
-	Vector3 Max = Vec3(0, 0, 0);
-	BoundingBox(A, B, C, &Min, &Max);
+	Vector3 Min;
+	Vector3 Max;
+	BoundingBox(A.Pos, B.Pos, C.Pos, &Min, &Max);
 
 	for (int Y = (int)Min.Y; Y < Max.Y; Y++) {
 		for (int X = (int)Min.X; X < Max.X; X++) {
 			if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
 				continue;
 
-			Vector3 BCnt = Vec3(0, 0, 0);
-			Barycentric(A, B, C, X, Y, &BCnt);
+
+			// NOTE, replace the line below with this wrong function call, impacts performance A LOT
+			// Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y, &BCnt);
+			Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y);
 
 			if (BCnt.X < 0 || BCnt.Y < 0 || BCnt.Z < 0)
 				continue;
 
 			int Idx = Y * ColorBuffer.Width + X;
-			float D = Float_Vary(A.Z, B.Z, C.Z, BCnt);
+			float D = Float_Vary(A.Pos.Z, B.Pos.Z, C.Pos.Z, BCnt);
 
 			if (!EnableDepthTesting || (DepthBuffer.Buffer[Idx].Float > D)) {
-				float TexU = Float_Vary(A_UV.X, B_UV.X, C_UV.X, BCnt);
-				float TexV = Float_Vary(A_UV.Y, B_UV.Y, C_UV.Y, BCnt);
+				float TexU = Float_Vary(A.UV.X, B.UV.X, C.UV.X, BCnt);
+				float TexV = Float_Vary(A.UV.Y, B.UV.Y, C.UV.Y, BCnt);
 				RendrColor PixColor = Shader_Fragment(BCnt, Vec2(TexU, TexV));
 
 
@@ -357,14 +403,15 @@ void DrawTriangle(Vector3* Vertices, Vector2* UVs, int Index) {
 	}
 
 	if (EnableWireframe) {
-		DrawLine((int)A.X, (int)A.Y, (int)B.X, (int)B.Y);
-		DrawLine((int)B.X, (int)B.Y, (int)C.X, (int)C.Y);
-		DrawLine((int)C.X, (int)C.Y, (int)A.X, (int)A.Y);
+		DrawLine((int)A.Pos.X, (int)A.Pos.Y, (int)B.Pos.X, (int)B.Pos.Y);
+		DrawLine((int)B.Pos.X, (int)B.Pos.Y, (int)C.Pos.X, (int)C.Pos.Y);
+		DrawLine((int)C.Pos.X, (int)C.Pos.Y, (int)A.Pos.X, (int)A.Pos.Y);
 	}
 }
 
-EXPORT void DrawTriangles(Vector3* Vertices, Vector2* UVs, int Count) {
-	for (int i = 0; i < Count; i++) {
-		DrawTriangle(Vertices, UVs, i * 3);
-	}
+EXPORT void DrawTriangles(RndrVertexBuffer* Vertices) {
+	int Count = Vertices->Length / 3;
+
+	for (int i = 0; i < Count; i++)
+		DrawTriangle(Vertices->Verts, i * 3);
 }

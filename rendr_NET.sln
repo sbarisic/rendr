@@ -8,6 +8,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendr_C", "rendr_C\rendr_C.vcxproj", "{60658623-5C39-47D7-A17B-10C3A458F994}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launcher", "Launcher\Launcher.csproj", "{D92C0BF6-82A9-4254-8390-9D6E969EED82}"
+	ProjectSection(ProjectDependencies) = postProject
+		{60658623-5C39-47D7-A17B-10C3A458F994} = {60658623-5C39-47D7-A17B-10C3A458F994}
+		{876D8344-C5FC-4B97-854B-5A6B453809FC} = {876D8344-C5FC-4B97-854B-5A6B453809FC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
