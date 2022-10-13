@@ -80,7 +80,7 @@ namespace Launcher {
 				Dt = (float)(CurTime - LastTime);
 				LastTime = CurTime;
 
-				if (PrintCounter++ > 10) {
+				if (PrintCounter++ > 4) {
 					PrintCounter = 0;
 					Console.WriteLine("FPS = {0}", FPSArray.Sum() / FPSArray.Length);
 				}

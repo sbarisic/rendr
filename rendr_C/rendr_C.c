@@ -81,7 +81,7 @@ typedef struct {
 //------------ Generic Utility Functions --------------------------------------------------
 //-----------------------------------------------------------------------------------------
 
-Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
+inline Matrix4x4 Matrix4x4_Multiply(const Matrix4x4 const A, const Matrix4x4 const B) {
 	Matrix4x4 Res;
 	Res.M11 = A.M11 * B.M11 + A.M12 * B.M21 + A.M13 * B.M31 + A.M14 * B.M41;
 	Res.M12 = A.M11 * B.M12 + A.M12 * B.M22 + A.M13 * B.M32 + A.M14 * B.M42;
@@ -104,60 +104,60 @@ Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
 
 
 
-Vector3 Vec3(float X, float Y, float Z) {
+inline Vector3 Vec3(float X, float Y, float Z) {
 	return (Vector3) {
 		X, Y, Z
 	};
 }
 
-Vector2 Vec2(float X, float Y) {
+inline Vector2 Vec2(float X, float Y) {
 	return (Vector2) {
 		X, Y
 	};
 }
 
-float Float_Vary(float A, float B, float C, Vector3 Bary) {
+inline float Float_Vary(float A, float B, float C, Vector3 Bary) {
 	return (A * Bary.X) + (B * Bary.Y) + (C * Bary.Z);
 }
 
-Vector3 Vector3_Sub(Vector3 A, Vector3 B) {
+inline Vector3 Vector3_Sub(Vector3 A, Vector3 B) {
 	return Vec3(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
 }
 
-Vector3 Vector3_Normalize(Vector3 V) {
+inline Vector3 Vector3_Normalize(Vector3 V) {
 	float LenSq = V.X * V.X + V.Y * V.Y + V.Z * V.Z;
-	float Len = (float)sqrt(LenSq);
+	float Len = sqrtf(LenSq);
 	return Vec3(V.X / Len, V.Y / Len, V.Z / Len);
 }
 
-Vector3 Vector3_Cross(Vector3 A, Vector3 B) {
+inline Vector3 Vector3_Cross(Vector3 A, Vector3 B) {
 	return Vec3(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
 }
 
-Vector3 Vector3_Transform(Vector3 V, Matrix4x4 Mat) {
+inline Vector3 Vector3_Transform(Vector3 V, Matrix4x4 Mat) {
 	return Vec3(V.X * Mat.M11 + V.Y * Mat.M21 + V.Z * Mat.M31 + Mat.M41, V.X * Mat.M12 + V.Y * Mat.M22 + V.Z * Mat.M32 + Mat.M42, V.X * Mat.M13 + V.Y * Mat.M23 + V.Z * Mat.M33 + Mat.M43);
 }
 
-float Min(float A, float B, float C) {
+inline float Min(float A, float B, float C) {
 	return min(A, min(B, C));
 }
 
-float Max(float A, float B, float C) {
+inline float Max(float A, float B, float C) {
 	return max(A, max(B, C));
 }
 
-float Clamp(float V, float Min, float Max) {
+inline float Clamp(float V, float Min, float Max) {
 	if (V < Min) return Min;
 	if (V > Max) return Max;
 	return V;
 }
 
-void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum, Vector3* Maximum) {
+void BoundingBox(const Vector3 const A, const Vector3 const B, const Vector3 const C, Vector3* const Minimum, Vector3* const Maximum) {
 	*Minimum = Vec3(Min(A.X, B.X, C.X), Min(A.Y, B.Y, C.Y), Min(A.Z, B.Z, C.Z));
 	*Maximum = Vec3(Max(A.X, B.X, C.X), Max(A.Y, B.Y, C.Y), Max(A.Z, B.Z, C.Z));
 }
 
-Vector3 Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY) {
+inline Vector3 Barycentric(const Vector3 const A, const Vector3 const B, const Vector3 const C, const int PX, const int PY) {
 	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX), Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
 	Vector3 Val;
 
@@ -191,7 +191,7 @@ const bool EnableDepthTesting = true;
 const bool EnableTexturing = true;
 const bool EnableBackfaceCulling = true;
 
-EXPORT RndrVertexBuffer* CreateVertexBuffer(Vector3* Points, Vector2* UVs, int Len) {
+EXPORT RndrVertexBuffer* CreateVertexBuffer(const Vector3* const Points, const Vector2* const UVs, const int Len) {
 	RndrVertexBuffer* Ret = malloc(sizeof(RndrVertexBuffer));
 
 	if (Ret == NULL)
@@ -212,7 +212,7 @@ EXPORT RndrVertexBuffer* CreateVertexBuffer(Vector3* Points, Vector2* UVs, int L
 	return Ret;
 }
 
-EXPORT DeleteVertexBuffer(RndrVertexBuffer* Buffer) {
+EXPORT DeleteVertexBuffer(RndrVertexBuffer* const Buffer) {
 	free(Buffer->Verts);
 	Buffer->Verts = NULL;
 	Buffer->Length = 0;
@@ -220,26 +220,27 @@ EXPORT DeleteVertexBuffer(RndrVertexBuffer* Buffer) {
 	free(Buffer);
 }
 
-EXPORT void SetColorBuffer(RendrColor* Buffer, int Width, int Height) {
+EXPORT void SetColorBuffer(const RendrColor* const Buffer, const int Width, const int Height) {
 	ColorBuffer.Buffer = Buffer;
 	ColorBuffer.Width = Width;
 	ColorBuffer.Height = Height;
 }
 
-EXPORT void SetDepthBuffer(RendrColor* Buffer, int Width, int Height) {
+EXPORT void SetDepthBuffer(const RendrColor* const Buffer, const int Width, const int Height) {
 	DepthBuffer.Buffer = Buffer;
 	DepthBuffer.Width = Width;
 	DepthBuffer.Height = Height;
 }
 
-RendrColor IndexBuffer(RendrBuffer* Buffer, float U, float V) {
-	int Height = Buffer->Height;
-	int Width = Buffer->Width;
+inline RendrColor IndexBuffer(const RendrBuffer* const Buffer, const float U, const float V) {
+	const int Height = Buffer->Height;
+	const int Width = Buffer->Width;
 
-	return Buffer->Buffer[(int)(V * Height) * Width + (int)(U * Width)];
+	const int Index = (int)(V * Height) * Width + (int)(U * Width);
+	return Buffer->Buffer[Index];
 }
 
-EXPORT void SetTexBuffer(RendrColor* Buffer, int Width, int Height) {
+EXPORT void SetTexBuffer(const RendrColor* const Buffer, const int Width, const int Height) {
 	Tex0.Buffer = Buffer;
 	Tex0.Width = Width;
 	Tex0.Height = Height;
@@ -268,7 +269,7 @@ EXPORT void SetMatrix(Matrix4x4 Mat, int MatType) {
 	}
 }
 
-EXPORT void Clear(byte R, byte G, byte B, byte A, float Depth) {
+EXPORT void Clear(const byte R, const byte G, const byte B, const byte A, const float Depth) {
 	int Len = ColorBuffer.Width * ColorBuffer.Height;
 
 	for (int i = 0; i < Len; i++) {
@@ -336,19 +337,19 @@ EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 	}
 }
 
-Vector3 Shader_Vertex(Vector3* V) {
+Vector3 Shader_Vertex(Vector3* const V) {
 	Matrix4x4 FinalMatrix = Matrix4x4_Multiply(Matrix4x4_Multiply(ModelMatrix, ViewMatrix), ProjectionMatrix);
 	*V = Vector3_Transform(*V, FinalMatrix);
 }
 
-RendrColor Shader_Fragment(Vector3 Pos, Vector2 UV) {
+RendrColor Shader_Fragment(const Vector3 Pos, const Vector2 UV) {
 	if (EnableTexturing)
 		return IndexBuffer(&Tex0, UV.X, UV.Y);
 
 	return DrawColor;
 }
 
-void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
+inline void DrawTriangle(const RndrVertex* const TriangleVerts, const int Index) {
 	RndrVertex A = TriangleVerts[Index];
 	RndrVertex B = TriangleVerts[Index + 1];
 	RndrVertex C = TriangleVerts[Index + 2];
@@ -409,8 +410,8 @@ void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
 	}
 }
 
-EXPORT void DrawTriangles(RndrVertexBuffer* Vertices) {
-	int Count = Vertices->Length / 3;
+EXPORT void DrawTriangles(const RndrVertexBuffer* const Vertices) {
+	const int Count = Vertices->Length / 3;
 
 	for (int i = 0; i < Count; i++)
 		DrawTriangle(Vertices->Verts, i * 3);
