@@ -141,6 +141,8 @@ namespace rendr_NET {
         const bool EnableTexturing = true;
         const bool EnableBackfaceCulling = true;
 
+
+
         [DllExport(CallingConvention = CConv)]
         public static void SetColorBuffer(RendrColor* Buffer, int Width, int Height) {
             ColorBuffer.Buffer = Buffer;

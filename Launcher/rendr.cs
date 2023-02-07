@@ -8,7 +8,7 @@ using System.Numerics;
 
 namespace Launcher {
 	public unsafe class rendr {
-		const string Lib = "rendr_C.dll";
+		const string Lib = "rendr_NET.dll";
 		const CallingConvention CConv = CallingConvention.Cdecl;
 
 
