@@ -81,7 +81,7 @@ typedef struct {
 //------------ Generic Utility Functions --------------------------------------------------
 //-----------------------------------------------------------------------------------------
 
-inline Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
+Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
 	Matrix4x4 Res = { 0 };
 	Res.M11 = A.M11 * B.M11 + A.M12 * B.M21 + A.M13 * B.M31 + A.M14 * B.M41;
 	Res.M12 = A.M11 * B.M12 + A.M12 * B.M22 + A.M13 * B.M32 + A.M14 * B.M42;
@@ -104,49 +104,49 @@ inline Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
 
 
 
-inline Vector3 Vec3(float X, float Y, float Z) {
+Vector3 Vec3(float X, float Y, float Z) {
 	return (Vector3) {
 		X, Y, Z
 	};
 }
 
-inline Vector2 Vec2(float X, float Y) {
+Vector2 Vec2(float X, float Y) {
 	return (Vector2) {
 		X, Y
 	};
 }
 
-inline float Float_Vary(float A, float B, float C, Vector3 Bary) {
+float Float_Vary(float A, float B, float C, Vector3 Bary) {
 	return (A * Bary.X) + (B * Bary.Y) + (C * Bary.Z);
 }
 
-inline Vector3 Vector3_Sub(Vector3 A, Vector3 B) {
+Vector3 Vector3_Sub(Vector3 A, Vector3 B) {
 	return Vec3(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
 }
 
-inline Vector3 Vector3_Normalize(Vector3 V) {
+Vector3 Vector3_Normalize(Vector3 V) {
 	float LenSq = V.X * V.X + V.Y * V.Y + V.Z * V.Z;
 	float Len = sqrtf(LenSq);
 	return Vec3(V.X / Len, V.Y / Len, V.Z / Len);
 }
 
-inline Vector3 Vector3_Cross(Vector3 A, Vector3 B) {
+Vector3 Vector3_Cross(Vector3 A, Vector3 B) {
 	return Vec3(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
 }
 
-inline Vector3 Vector3_Transform(Vector3 V, Matrix4x4 Mat) {
+Vector3 Vector3_Transform(Vector3 V, Matrix4x4 Mat) {
 	return Vec3(V.X * Mat.M11 + V.Y * Mat.M21 + V.Z * Mat.M31 + Mat.M41, V.X * Mat.M12 + V.Y * Mat.M22 + V.Z * Mat.M32 + Mat.M42, V.X * Mat.M13 + V.Y * Mat.M23 + V.Z * Mat.M33 + Mat.M43);
 }
 
-inline float Min(float A, float B, float C) {
+float Min(float A, float B, float C) {
 	return min(A, min(B, C));
 }
 
-inline float Max(float A, float B, float C) {
+float Max(float A, float B, float C) {
 	return max(A, max(B, C));
 }
 
-inline float Clamp(float V, float Min, float Max) {
+float Clamp(float V, float Min, float Max) {
 	if (V < Min) return Min;
 	if (V > Max) return Max;
 	return V;
@@ -157,7 +157,7 @@ void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum, Vector3* Max
 	*Maximum = Vec3(Max(A.X, B.X, C.X), Max(A.Y, B.Y, C.Y), Max(A.Z, B.Z, C.Z));
 }
 
-inline Vector3 Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY) {
+Vector3 Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY) {
 	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX), Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
 	Vector3 Val = { 0 };
 
@@ -243,7 +243,7 @@ EXPORT void SetDepthBuffer(RendrColor* Buffer, int Width, int Height) {
 	DepthBuffer.Height = Height;
 }
 
-inline RendrColor IndexBuffer(RendrBuffer* Buffer, float U, float V) {
+RendrColor IndexBuffer(RendrBuffer* Buffer, float U, float V) {
 	int Height = Buffer->Height;
 	int Width = Buffer->Width;
 
@@ -359,7 +359,7 @@ RendrColor Shader_Fragment(Vector3 Pos, Vector2 UV) {
 	return DrawColor;
 }
 
-inline void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
+void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
 	RndrVertex A = TriangleVerts[Index];
 	RndrVertex B = TriangleVerts[Index + 1];
 	RndrVertex C = TriangleVerts[Index + 2];
