@@ -152,12 +152,12 @@ inline float Clamp(float V, float Min, float Max) {
 	return V;
 }
 
-void BoundingBox(const Vector3 const A, const Vector3 const B, const Vector3 const C, Vector3* const Minimum, Vector3* const Maximum) {
+void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum, Vector3* Maximum) {
 	*Minimum = Vec3(Min(A.X, B.X, C.X), Min(A.Y, B.Y, C.Y), Min(A.Z, B.Z, C.Z));
 	*Maximum = Vec3(Max(A.X, B.X, C.X), Max(A.Y, B.Y, C.Y), Max(A.Z, B.Z, C.Z));
 }
 
-inline Vector3 Barycentric(const Vector3 const A, const Vector3 const B, const Vector3 const C, const int PX, const int PY) {
+inline Vector3 Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY) {
 	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX), Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
 	Vector3 Val;
 
@@ -191,7 +191,7 @@ const bool EnableDepthTesting = true;
 const bool EnableTexturing = true;
 const bool EnableBackfaceCulling = true;
 
-EXPORT RndrVertexBuffer* CreateVertexBuffer(const Vector3* const Points, const Vector2* const UVs, const int Len) {
+EXPORT RndrVertexBuffer* CreateVertexBuffer(Vector3* Points, Vector2* UVs, int Len) {
 	RndrVertexBuffer* Ret = malloc(sizeof(RndrVertexBuffer));
 
 	if (Ret == NULL)
@@ -212,7 +212,7 @@ EXPORT RndrVertexBuffer* CreateVertexBuffer(const Vector3* const Points, const V
 	return Ret;
 }
 
-EXPORT DeleteVertexBuffer(RndrVertexBuffer* const Buffer) {
+EXPORT DeleteVertexBuffer(RndrVertexBuffer* Buffer) {
 	free(Buffer->Verts);
 	Buffer->Verts = NULL;
 	Buffer->Length = 0;
@@ -220,27 +220,27 @@ EXPORT DeleteVertexBuffer(RndrVertexBuffer* const Buffer) {
 	free(Buffer);
 }
 
-EXPORT void SetColorBuffer(const RendrColor* const Buffer, const int Width, const int Height) {
+EXPORT void SetColorBuffer(RendrColor* Buffer, int Width, int Height) {
 	ColorBuffer.Buffer = Buffer;
 	ColorBuffer.Width = Width;
 	ColorBuffer.Height = Height;
 }
 
-EXPORT void SetDepthBuffer(const RendrColor* const Buffer, const int Width, const int Height) {
+EXPORT void SetDepthBuffer(RendrColor* Buffer, int Width, int Height) {
 	DepthBuffer.Buffer = Buffer;
 	DepthBuffer.Width = Width;
 	DepthBuffer.Height = Height;
 }
 
-inline RendrColor IndexBuffer(const RendrBuffer* const Buffer, const float U, const float V) {
-	const int Height = Buffer->Height;
-	const int Width = Buffer->Width;
+inline RendrColor IndexBuffer(RendrBuffer* Buffer, float U, float V) {
+	int Height = Buffer->Height;
+	int Width = Buffer->Width;
 
-	const int Index = (int)(V * Height) * Width + (int)(U * Width);
+	int Index = (int)(V * Height) * Width + (int)(U * Width);
 	return Buffer->Buffer[Index];
 }
 
-EXPORT void SetTexBuffer(const RendrColor* const Buffer, const int Width, const int Height) {
+EXPORT void SetTexBuffer(RendrColor* Buffer, int Width, int Height) {
 	Tex0.Buffer = Buffer;
 	Tex0.Width = Width;
 	Tex0.Height = Height;
@@ -269,7 +269,7 @@ EXPORT void SetMatrix(Matrix4x4 Mat, int MatType) {
 	}
 }
 
-EXPORT void Clear(const byte R, const byte G, const byte B, const byte A, const float Depth) {
+EXPORT void Clear(byte R, byte G, byte B, byte A, float Depth) {
 	int Len = ColorBuffer.Width * ColorBuffer.Height;
 
 	for (int i = 0; i < Len; i++) {
@@ -320,8 +320,7 @@ EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 				continue;
 
 			ColorBuffer.Buffer[X * ColorBuffer.Width + Y] = DrawColor;
-		}
-		else {
+		} else {
 			if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
 				continue;
 
@@ -337,19 +336,19 @@ EXPORT void DrawLine(int X0, int Y0, int X1, int Y1) {
 	}
 }
 
-Vector3 Shader_Vertex(Vector3* const V) {
+void Shader_Vertex(Vector3* V) {
 	Matrix4x4 FinalMatrix = Matrix4x4_Multiply(Matrix4x4_Multiply(ModelMatrix, ViewMatrix), ProjectionMatrix);
 	*V = Vector3_Transform(*V, FinalMatrix);
 }
 
-RendrColor Shader_Fragment(const Vector3 Pos, const Vector2 UV) {
+RendrColor Shader_Fragment(Vector3 Pos, Vector2 UV) {
 	if (EnableTexturing)
 		return IndexBuffer(&Tex0, UV.X, UV.Y);
 
 	return DrawColor;
 }
 
-inline void DrawTriangle(const RndrVertex* const TriangleVerts, const int Index) {
+inline void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
 	RndrVertex A = TriangleVerts[Index];
 	RndrVertex B = TriangleVerts[Index + 1];
 	RndrVertex C = TriangleVerts[Index + 2];
@@ -410,8 +409,8 @@ inline void DrawTriangle(const RndrVertex* const TriangleVerts, const int Index)
 	}
 }
 
-EXPORT void DrawTriangles(const RndrVertexBuffer* const Vertices) {
-	const int Count = Vertices->Length / 3;
+EXPORT void DrawTriangles(RndrVertexBuffer* Vertices) {
+	int Count = Vertices->Length / 3;
 
 	for (int i = 0; i < Count; i++)
 		DrawTriangle(Vertices->Verts, i * 3);

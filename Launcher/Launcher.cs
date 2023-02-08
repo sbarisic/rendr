@@ -12,13 +12,25 @@ using System.Drawing.Imaging;
 using System.Numerics;
 
 namespace Launcher {
-	static class Kernel32 {
-		[DllImport("kernel32", CharSet = CharSet.Unicode)]
-		public static extern bool SetDllDirectory(string PathName);
-	}
-
 	internal class Program {
 		static void Main(string[] args) {
+			string LibName = "rendr_NET.dll";
+			Console.Title = "rendr";
+
+			Console.WriteLine("  [1] rendr_NET.dll");
+			Console.WriteLine("  [2] rendr_C.dll");
+			Console.WriteLine();
+			Console.Write("Input (default [1]): ");
+
+			if (Console.ReadLine().Trim() == "2") {
+				LibName = "rendr_C.dll";
+			}
+
+			Console.Title = LibName;
+			Console.WriteLine("Using {0}", LibName);
+			Console.WriteLine();
+
+
 			bool Is64bit = IntPtr.Size == 8;
 			string DllPath = Path.GetFullPath(".");
 
@@ -30,6 +42,7 @@ namespace Launcher {
 			Console.WriteLine("DLL Directory: {0}", DllPath);
 			Kernel32.SetDllDirectory(DllPath);
 
+			rendr.BindLibrary(DllPath + "/" + LibName);
 			RendrProgram.Run();
 		}
 	}
@@ -68,31 +81,21 @@ namespace Launcher {
 			Gfx = Graphics.FromHwnd(Hwnd);
 			CreateObjects();
 
+			PerfMonitor Monitor = new PerfMonitor();
+			Monitor.Start();
+
 			double LastTime = 0;
 			float Dt = 0;
-
-			float[] FPSArray = new float[100];
-			int FPSIdx = 0;
-			int PrintCounter = 0;
 
 			while (!Glfw.WindowShouldClose(Wind)) {
 				double CurTime = Glfw.GetTime();
 				Dt = (float)(CurTime - LastTime);
 				LastTime = CurTime;
 
-				if (PrintCounter++ > 4) {
-					PrintCounter = 0;
-					Console.WriteLine("FPS = {0}", FPSArray.Sum() / FPSArray.Length);
-				}
-
-				FPSArray[FPSIdx++] = 1.0f / Dt;
-				if (FPSIdx >= FPSArray.Length)
-					FPSIdx = 0;
-
-
-
 				RenderLoop(Dt);
 				Glfw.PollEvents();
+
+				Monitor.Trigger();
 			}
 
 			Glfw.Terminate();
@@ -161,11 +164,13 @@ namespace Launcher {
 			rendr.SetTexBuffer(Tex0.Data, Tex0.Width, Tex0.Height);
 		}
 
+		static Stopwatch SWatch = Stopwatch.StartNew();
+
 		static void RenderLoop(float Dt) {
 			Framebuffer.Lock();
 
-			//rendr.SetMatrix(ModelMatrix, 2);
-			//ModelMatrix = Matrix4x4.CreateFromYawPitchRoll(Rad(SWatch.ElapsedMilliseconds / 100), Rad(45), 0);
+			rendr.SetMatrix(ModelMatrix, 2);
+			ModelMatrix = Matrix4x4.CreateFromYawPitchRoll(Rad(SWatch.ElapsedMilliseconds / 100), Rad(45), 0);
 
 			rendr.SetColorBuffer(Framebuffer.Data, Framebuffer.Width, Framebuffer.Height);
 			rendr.Clear(0, 0, 0, 255, 0.0f);

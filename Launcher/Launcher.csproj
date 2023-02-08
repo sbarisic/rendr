@@ -55,8 +55,10 @@
     <Compile Include="GLFW\Glfw.Enum.cs" />
     <Compile Include="GLFW\Glfw.Func.cs" />
     <Compile Include="GLFW\Glfw.Struct.cs" />
+    <Compile Include="Kernel32.cs" />
     <Compile Include="ObjLoader.cs" />
     <Compile Include="Launcher.cs" />
+    <Compile Include="PerfMonitor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="rendr.cs" />
   </ItemGroup>
