@@ -81,8 +81,8 @@ typedef struct {
 //------------ Generic Utility Functions --------------------------------------------------
 //-----------------------------------------------------------------------------------------
 
-inline Matrix4x4 Matrix4x4_Multiply(const Matrix4x4 const A, const Matrix4x4 const B) {
-	Matrix4x4 Res;
+inline Matrix4x4 Matrix4x4_Multiply(Matrix4x4 A, Matrix4x4 B) {
+	Matrix4x4 Res = { 0 };
 	Res.M11 = A.M11 * B.M11 + A.M12 * B.M21 + A.M13 * B.M31 + A.M14 * B.M41;
 	Res.M12 = A.M11 * B.M12 + A.M12 * B.M22 + A.M13 * B.M32 + A.M14 * B.M42;
 	Res.M13 = A.M11 * B.M13 + A.M12 * B.M23 + A.M13 * B.M33 + A.M14 * B.M43;
@@ -159,7 +159,7 @@ void BoundingBox(Vector3 A, Vector3 B, Vector3 C, Vector3* Minimum, Vector3* Max
 
 inline Vector3 Barycentric(Vector3 A, Vector3 B, Vector3 C, int PX, int PY) {
 	Vector3 U = Vector3_Cross(Vec3(C.X - A.X, B.X - A.X, A.X - PX), Vec3(C.Y - A.Y, B.Y - A.Y, A.Y - PY));
-	Vector3 Val;
+	Vector3 Val = { 0 };
 
 	if (fabs(U.Z) < 1) {
 		Val.X = -1;
@@ -186,15 +186,15 @@ Matrix4x4 ViewMatrix;
 Matrix4x4 ProjectionMatrix;
 Matrix4x4 ModelMatrix;
 
-const bool EnableWireframe = false;
-const bool EnableDepthTesting = true;
-const bool EnableTexturing = true;
-const bool EnableBackfaceCulling = true;
+static bool WireframeEnabled = false;
+static bool EnableDepthTesting = true;
+static bool EnableTexturing = true;
+static bool EnableBackfaceCulling = true;
 
 EXPORT RndrVertexBuffer* CreateVertexBuffer(Vector3* Points, Vector2* UVs, int Len) {
 	RndrVertexBuffer* Ret = malloc(sizeof(RndrVertexBuffer));
 
-	if (Ret == NULL)
+	if (Ret == NULL || Points == NULL || UVs == NULL || Len <= 0)
 		return NULL;
 
 	Ret->Verts = malloc(sizeof(RndrVertex) * Len);
@@ -207,9 +207,20 @@ EXPORT RndrVertexBuffer* CreateVertexBuffer(Vector3* Points, Vector2* UVs, int L
 	Ret->Length = Len;
 
 	for (int i = 0; i < Len; i++)
-		Ret->Verts[i] = (RndrVertex){ Points[i], UVs[i] };
+	{
+		Ret->Verts[i].Pos = Points[i];
+		Ret->Verts[i].UV = UVs[i];
+	}
 
 	return Ret;
+}
+
+EXPORT void EnableWireframe(int Enable) {
+	if (Enable != 0) {
+		WireframeEnabled = true;
+	} else {
+		WireframeEnabled = false;
+	}
 }
 
 EXPORT DeleteVertexBuffer(RndrVertexBuffer* Buffer) {
@@ -357,55 +368,51 @@ inline void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
 	Shader_Vertex(&B.Pos);
 	Shader_Vertex(&C.Pos);
 
-	//Vector2 A_UV = UVs[Index];
-	//Vector2 B_UV = UVs[Index + 1];
-	//Vector2 C_UV = UVs[Index + 2];
-
 	if (EnableBackfaceCulling) {
 		Vector3 Cross = Vector3_Normalize(Vector3_Cross(Vector3_Sub(C.Pos, A.Pos), Vector3_Sub(B.Pos, A.Pos)));
 		if (Cross.Z < 0)
 			return;
 	}
 
-	Vector3 Min;
-	Vector3 Max;
-	BoundingBox(A.Pos, B.Pos, C.Pos, &Min, &Max);
-
-	for (int Y = (int)Min.Y; Y < Max.Y; Y++) {
-		for (int X = (int)Min.X; X < Max.X; X++) {
-			if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
-				continue;
-
-
-			// NOTE, replace the line below with this wrong function call, impacts performance A LOT
-			// Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y, &BCnt);
-			Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y);
-
-			if (BCnt.X < 0 || BCnt.Y < 0 || BCnt.Z < 0)
-				continue;
-
-			int Idx = Y * ColorBuffer.Width + X;
-			float D = Float_Vary(A.Pos.Z, B.Pos.Z, C.Pos.Z, BCnt);
-
-			if (!EnableDepthTesting || (DepthBuffer.Buffer[Idx].Float > D)) {
-				float TexU = Float_Vary(A.UV.X, B.UV.X, C.UV.X, BCnt);
-				float TexV = Float_Vary(A.UV.Y, B.UV.Y, C.UV.Y, BCnt);
-				RendrColor PixColor = Shader_Fragment(BCnt, Vec2(TexU, TexV));
-
-
-				ColorBuffer.Buffer[Y * ColorBuffer.Width + X] = PixColor;
-
-				if (EnableDepthTesting) {
-					DepthBuffer.Buffer[Idx].Float = D;
-				}
-			}
-		}
-	}
-
-	if (EnableWireframe) {
+	if (WireframeEnabled) {
 		DrawLine((int)A.Pos.X, (int)A.Pos.Y, (int)B.Pos.X, (int)B.Pos.Y);
 		DrawLine((int)B.Pos.X, (int)B.Pos.Y, (int)C.Pos.X, (int)C.Pos.Y);
 		DrawLine((int)C.Pos.X, (int)C.Pos.Y, (int)A.Pos.X, (int)A.Pos.Y);
+	} else {
+		Vector3 Min;
+		Vector3 Max;
+		BoundingBox(A.Pos, B.Pos, C.Pos, &Min, &Max);
+
+		for (int Y = (int)Min.Y; Y < Max.Y; Y++) {
+			for (int X = (int)Min.X; X < Max.X; X++) {
+				if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
+					continue;
+
+
+				// NOTE, replace the line below with this wrong function call, impacts performance A LOT
+				// Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y, &BCnt);
+				Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y);
+
+				if (BCnt.X < 0 || BCnt.Y < 0 || BCnt.Z < 0)
+					continue;
+
+				int Idx = Y * ColorBuffer.Width + X;
+				float D = Float_Vary(A.Pos.Z, B.Pos.Z, C.Pos.Z, BCnt);
+
+				if (!EnableDepthTesting || (DepthBuffer.Buffer[Idx].Float > D)) {
+					float TexU = Float_Vary(A.UV.X, B.UV.X, C.UV.X, BCnt);
+					float TexV = Float_Vary(A.UV.Y, B.UV.Y, C.UV.Y, BCnt);
+					RendrColor PixColor = Shader_Fragment(BCnt, Vec2(TexU, TexV));
+
+
+					ColorBuffer.Buffer[Y * ColorBuffer.Width + X] = PixColor;
+
+					if (EnableDepthTesting) {
+						DepthBuffer.Buffer[Idx].Float = D;
+					}
+				}
+			}
+		}
 	}
 }
 

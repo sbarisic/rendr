@@ -167,6 +167,12 @@ namespace Launcher {
 		static Stopwatch SWatch = Stopwatch.StartNew();
 
 		static void RenderLoop(float Dt) {
+			if (Glfw.GetKey(Wind, (int)Glfw.KeyCode.F1))
+				rendr.EnableWireframe(0);
+
+			if (Glfw.GetKey(Wind, (int)Glfw.KeyCode.F2))
+				rendr.EnableWireframe(1);
+
 			Framebuffer.Lock();
 
 			rendr.SetMatrix(ModelMatrix, 2);

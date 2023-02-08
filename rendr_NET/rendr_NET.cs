@@ -157,17 +157,17 @@ namespace rendr_NET {
 		public static Matrix4x4 ProjectionMatrix;
 		public static Matrix4x4 ModelMatrix;
 
-		const bool EnableWireframe = false;
-		const bool EnableDepthTesting = true;
-		const bool EnableTexturing = true;
-		const bool EnableBackfaceCulling = true;
+		static bool WireframeEnabled = false;
+		static bool EnableDepthTesting = true;
+		static bool EnableTexturing = true;
+		static bool EnableBackfaceCulling = true;
 
 
 		[DllExport(CallingConvention = CConv)]
 		public static RndrVertexBuffer* CreateVertexBuffer(Vector3* Points, Vector2* UVs, int Len) {
 			RndrVertexBuffer* Ret = (RndrVertexBuffer*)Marshal.AllocHGlobal(sizeof(RndrVertexBuffer));
 
-			if (Ret == null)
+			if (Ret == null || Points == null || UVs == null || Len <= 0)
 				return null;
 
 			Ret->Verts = (RndrVertex*)Marshal.AllocHGlobal(sizeof(RndrVertex) * Len);
@@ -185,6 +185,15 @@ namespace rendr_NET {
 			}
 
 			return Ret;
+		}
+
+		[DllExport(CallingConvention = CConv)]
+		public static void EnableWireframe(int Enable) {
+			if (Enable != 0) {
+				WireframeEnabled = true;
+			} else {
+				WireframeEnabled = false;
+			}
 		}
 
 
@@ -256,8 +265,14 @@ namespace rendr_NET {
 			}
 		}
 
+		// BUG: DllExport erases the exported method
+		// therefore it's necessary to export a separate wrapper function if we want the original to be still invokable from inside the original C# code
 		[DllExport(CallingConvention = CConv)]
 		public static void DrawLine(int X0, int Y0, int X1, int Y1) {
+			DrawLineImpl(X0, Y0, X1, Y1);
+		}
+
+		public static void DrawLineImpl(int X0, int Y0, int X1, int Y1) {
 			bool Steep = false;
 
 			if (abs(X0 - X1) < abs(Y0 - Y1)) {
@@ -334,62 +349,50 @@ namespace rendr_NET {
 			Shader_Vertex(&B.Pos);
 			Shader_Vertex(&C.Pos);
 
-			//Vector2 A_UV = UVs[Index];
-			//Vector2 B_UV = UVs[Index + 1];
-			//Vector2 C_UV = UVs[Index + 2];
-
 			if (EnableBackfaceCulling) {
 				Vector3 Cross = Vector3_Normalize(Vector3_Cross(Vector3_Sub(C.Pos, A.Pos), Vector3_Sub(B.Pos, A.Pos)));
 				if (Cross.Z < 0)
 					return;
 			}
 
-			Vector3 Min;
-			Vector3 Max;
-			BoundingBox(A.Pos, B.Pos, C.Pos, &Min, &Max);
+			if (WireframeEnabled) {
+				DrawLineImpl((int)A.Pos.X, (int)A.Pos.Y, (int)B.Pos.X, (int)B.Pos.Y);
+				DrawLineImpl((int)B.Pos.X, (int)B.Pos.Y, (int)C.Pos.X, (int)C.Pos.Y);
+				DrawLineImpl((int)C.Pos.X, (int)C.Pos.Y, (int)A.Pos.X, (int)A.Pos.Y);
+			} else {
+				Vector3 Min;
+				Vector3 Max;
+				BoundingBox(A.Pos, B.Pos, C.Pos, &Min, &Max);
 
-			for (int Y = (int)Min.Y; Y < Max.Y; Y++) {
-				for (int X = (int)Min.X; X < Max.X; X++) {
-					if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
-						continue;
+				for (int Y = (int)Min.Y; Y < Max.Y; Y++) {
+					for (int X = (int)Min.X; X < Max.X; X++) {
+						if (X < 0 || Y < 0 || X >= ColorBuffer.Width || Y >= ColorBuffer.Height)
+							continue;
 
-					Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y);
+						Vector3 BCnt = Barycentric(A.Pos, B.Pos, C.Pos, X, Y);
 
-					if (BCnt.X < 0 || BCnt.Y < 0 || BCnt.Z < 0)
-						continue;
+						if (BCnt.X < 0 || BCnt.Y < 0 || BCnt.Z < 0)
+							continue;
 
-					int Idx = Y * ColorBuffer.Width + X;
-					float D = Float_Vary(A.Pos.Z, B.Pos.Z, C.Pos.Z, BCnt);
+						int Idx = Y * ColorBuffer.Width + X;
+						float D = Float_Vary(A.Pos.Z, B.Pos.Z, C.Pos.Z, BCnt);
 
-					if (!EnableDepthTesting || (DepthBuffer.Buffer[Idx].Float > D)) {
-						float TexU = Float_Vary(A.UV.X, B.UV.X, C.UV.X, BCnt);
-						float TexV = Float_Vary(A.UV.Y, B.UV.Y, C.UV.Y, BCnt);
-						RendrColor PixColor = Shader_Fragment(BCnt, Vec2(TexU, TexV));
+						if (!EnableDepthTesting || (DepthBuffer.Buffer[Idx].Float > D)) {
+							float TexU = Float_Vary(A.UV.X, B.UV.X, C.UV.X, BCnt);
+							float TexV = Float_Vary(A.UV.Y, B.UV.Y, C.UV.Y, BCnt);
+							RendrColor PixColor = Shader_Fragment(BCnt, Vec2(TexU, TexV));
 
 
-						ColorBuffer.Buffer[Y * ColorBuffer.Width + X] = PixColor;
+							ColorBuffer.Buffer[Y * ColorBuffer.Width + X] = PixColor;
 
-						if (EnableDepthTesting) {
-							DepthBuffer.Buffer[Idx].Float = D;
+							if (EnableDepthTesting) {
+								DepthBuffer.Buffer[Idx].Float = D;
+							}
 						}
 					}
 				}
 			}
-
-			if (EnableWireframe) {
-				DrawLine((int)A.Pos.X, (int)A.Pos.Y, (int)B.Pos.X, (int)B.Pos.Y);
-				DrawLine((int)B.Pos.X, (int)B.Pos.Y, (int)C.Pos.X, (int)C.Pos.Y);
-				DrawLine((int)C.Pos.X, (int)C.Pos.Y, (int)A.Pos.X, (int)A.Pos.Y);
-			}
 		}
-
-		/*[DllExport(CallingConvention = CConv)]
-        public static void DrawTriangles(Vector3* Vertices, Vector2* UVs, int Count) {
-            for (int i = 0; i < Count; i++) {
-                DrawTriangle(Vertices, UVs, i * 3);
-            }
-        }*/
-
 
 		[DllExport(CallingConvention = CConv)]
 		public static void DrawTriangles(RndrVertexBuffer* Vertices) {

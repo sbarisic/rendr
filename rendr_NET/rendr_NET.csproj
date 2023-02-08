@@ -43,7 +43,7 @@
     <DllExportIdent>E0142A4F-B4FF-4371-9CA7-0F1AC03F3AC4</DllExportIdent>
     <DllExportMetaLibName>DllExport.dll</DllExportMetaLibName>
     <DllExportNamespace>rendr_NET</DllExportNamespace>
-    <DllExportDDNSCecil>true</DllExportDDNSCecil>
+    <DllExportDDNSCecil>false</DllExportDDNSCecil>
     <DllExportSkipOnAnyCpu>false</DllExportSkipOnAnyCpu>
     <DllExportPlatform>Auto</DllExportPlatform>
     <DllExportOrdinalsBase>1</DllExportOrdinalsBase>

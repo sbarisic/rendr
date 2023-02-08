@@ -22,6 +22,8 @@ namespace Launcher {
 
 	public delegate void MatrixFunc(Matrix4x4 Mat, int MatType);
 
+	public delegate void IntFunc(int i);
+
 	[AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
 	sealed class DllImport2Attribute : Attribute {
 		public DllImport2Attribute() {
@@ -59,6 +61,9 @@ namespace Launcher {
 
 		[DllImport2]
 		public static CreateVertexBufferFunc CreateVertexBuffer;
+
+		[DllImport2]
+		public static IntFunc EnableWireframe;
 
 		/*
 		[DllImport(Lib, CallingConvention = CConv)]
