@@ -340,10 +340,6 @@ namespace rendr_NET {
 			return DrawColor;
 		}
 
-		static int CrapTest(int* ptr) {
-			return 0;
-		}
-
 		public static void DrawTriangle(RndrVertex* TriangleVerts, int Index) {
 			RndrVertex A = TriangleVerts[Index];
 			RndrVertex B = TriangleVerts[Index + 1];
