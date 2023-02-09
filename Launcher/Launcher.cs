@@ -125,7 +125,11 @@ namespace Launcher {
 			DepthBuffer.Lock();
 			rendr.SetDepthBuffer(DepthBuffer.Data, DepthBuffer.Width, DepthBuffer.Height);
 
-			Tex0 = new DrawBitmap(Image.FromFile("models/cup_green/tex/cup_DefaultMaterial_AO.png"));
+
+			Image Tex0_Image = Image.FromFile("models/cup_green/tex/cup_DefaultMaterial_AO.png");
+			Tex0_Image.RotateFlip(RotateFlipType.RotateNoneFlipXY);
+
+			Tex0 = new DrawBitmap(Tex0_Image);
 			Tex0.Lock();
 
 			// Load vertices and uvs
