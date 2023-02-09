@@ -97,3 +97,7 @@ Now actual results everybody is interested in.
 
 ### Conclusion
 
+Example problem in this demo is written in such a way to maximize a single CPU core to the limits.
+Functions which are very hard to parallelize, but take a lot of processor time to complete and hog main application performance might benefit from being rewritten in a more low-level language like C.
+
+Some time in a future blog post we're going to look into simple optimizations we can do to the C# code to make it just as fast, if not even faster than the C equivalent. After all, nobody uses pointers in modern .NET code these days :)
