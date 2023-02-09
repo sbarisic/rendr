@@ -81,6 +81,8 @@ It's still not worth sacrificing all the new language features for this small pe
 Interesting! With no optimizations by the compiler, the .NET version is actually faster.
 C binary rendered the 1000th frame after 692 seconds with 1.45 FPS average, while C# did the same in about 422 seconds with 2.38 FPS average.
 
+![](https://raw.githubusercontent.com/sbarisic/rendr/main/screens/static_screenshot.png)
+
 ![](https://raw.githubusercontent.com/sbarisic/rendr/main/screens/c_debug_fullshading.png)
 
 ![](https://raw.githubusercontent.com/sbarisic/rendr/main/screens/csharp_debug_fullshading.png)
